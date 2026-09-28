@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Denkmäler digital erfassen</title>
+<meta name="description" content="Sony α7R IV, EinScan H2 und FARO Focus: Geräte und Projekte zur Digitalisierung von Monumenten.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --basalt: #24332F;
+    --moss: #33493F;
+    --plaster: #E4E7E1;
+    --sandstone: #C8A165;
+    --lichen: #9DB5A7;
+    --ink: #1F2B28;
+    --font: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    box-sizing: border-box;
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    font-family: var(--font);
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    background: var(--basalt);
+    color: var(--plaster);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--sandstone); outline-offset: 3px; }
+
+  /* ---------- Vollbild-Sektionen ---------- */
+  .screen {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    scroll-snap-align: start;
+    display: flex;
+    align-items: center;
+    padding: calc(env(safe-area-inset-top, 0px) + 4rem) clamp(1.25rem, 6vw, 6rem) calc(env(safe-area-inset-bottom, 0px) + 4rem);
+    overflow: hidden;
+  }
+  .screen--light { background: var(--plaster); color: var(--ink); }
+  .screen--dark  { background: var(--basalt); color: var(--plaster); }
+  .screen--moss  { background: var(--moss);   color: var(--plaster); }
+
+  .inner { width: 100%; max-width: 1200px; margin: 0 auto; }
+
+  /* ---------- Gerät ---------- */
+  .device {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-areas:
+      "head  art"
+      "specs specs";
+    column-gap: clamp(2rem, 5vw, 5rem);
+    row-gap: clamp(1.5rem, 4vh, 3rem);
+    align-items: end;
+  }
+  .device-head { grid-area: head; }
+  .device-art  { grid-area: art; justify-self: end; width: 100%; max-width: 420px; }
+  .device-art svg { width: 100%; height: auto; display: block; }
+  .device-specs { grid-area: specs; }
+
+  .scale {
+    display: inline-block;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.2rem 0.75rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    opacity: 0.8;
+    margin-bottom: 1.25rem;
+  }
+  .device h2 {
+    font-weight: 850;
+    font-stretch: 125%;
+    font-size: clamp(2.4rem, 7vw, 5.6rem);
+    line-height: 0.92;
+    letter-spacing: -0.025em;
+    margin: 0 0 1rem;
+  }
+  .device h2 small {
+    display: block;
+    font-size: 0.32em;
+    font-weight: 500;
+    font-stretch: 100%;
+    letter-spacing: 0;
+    margin-top: 0.6rem;
+    line-height: 1.3;
+    opacity: 0.75;
+  }
+  .role { max-width: 34rem; margin: 0; font-size: 1.1rem; }
+
+  /* Datenblatt */
+  .specs {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(2rem, 5vw, 4rem);
+    border-top: 2px solid currentColor;
+  }
+  .spec {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.8fr) minmax(0, 1.2fr);
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  }
+  .spec dt { font-size: 0.92rem; opacity: 0.7; padding-top: 0.15rem; }
+  .spec dd {
+    margin: 0;
+    font-weight: 650;
+    font-stretch: 88%;
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+  }
+  .spec dd span { display: block; font-weight: 400; font-stretch: 100%; font-size: 0.88rem; opacity: 0.72; }
+
+  .screen--light .accent { color: #8A6428; }
+  .screen--dark .accent, .screen--moss .accent { color: var(--sandstone); }
+
+  /* ---------- Abschluss ---------- */
+  .closing h2 {
+    font-weight: 850; font-stretch: 125%;
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    line-height: 1; letter-spacing: -0.02em;
+    margin: 0 0 2.5rem; max-width: 18ch;
+  }
+  .ladder { list-style: none; padding: 0; margin: 0 0 3rem; display: grid; gap: 0; border-top: 2px solid currentColor; }
+  .ladder li {
+    display: grid;
+    grid-template-columns: minmax(9rem, 0.6fr) minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: 1.25rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+    align-items: baseline;
+  }
+  .ladder strong { font-stretch: 110%; font-weight: 750; font-size: 1.15rem; }
+  .ladder .res { font-weight: 650; font-stretch: 88%; font-variant-numeric: tabular-nums; }
+  .note { font-size: 0.88rem; opacity: 0.75; max-width: 60ch; margin: 0; }
+
+  /* ---------- Seitennavigation ---------- */
+  .dots {
+    position: fixed; z-index: 10;
+    right: clamp(0.75rem, 2vw, 1.75rem);
+    top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 0.9rem;
+    margin: 0; padding: 0; list-style: none;
+  }
+  .dots a {
+    display: flex; align-items: center; justify-content: flex-end; gap: 0.6rem;
+    text-decoration: none;
+    font-size: 0.85rem;
+    color: var(--dot-color, var(--plaster));
+    transition: color .3s;
+  }
+  .dots a span {
+    opacity: 0; transform: translateX(6px);
+    transition: opacity .2s, transform .2s;
+    white-space: nowrap;
+  }
+  .dots a:hover span, .dots a:focus-visible span { opacity: 1; transform: none; }
+  .dots a::after {
+    content: ""; width: 9px; height: 9px; border-radius: 50%;
+    border: 1.5px solid currentColor; flex: none;
+    transition: background .2s, transform .2s;
+  }
+  .dots a[aria-current="true"]::after { background: currentColor; transform: scale(1.25); }
+  body[data-tone="light"] .dots { --dot-color: var(--ink); }
+
+  /* ---------- Responsiv ---------- */
+  @media (max-width: 860px) {
+    html { scroll-snap-type: y proximity; }
+    .device {
+      grid-template-columns: 1fr;
+      grid-template-areas: "art" "head" "specs";
+    }
+    .device-art { justify-self: start; max-width: 260px; }
+    .specs { grid-template-columns: 1fr; }
+    .ladder li { grid-template-columns: 1fr; gap: 0.2rem; }
+    .dots { display: none; }
+  }
+  @media (max-width: 480px) {
+    .spec { grid-template-columns: 1fr; gap: 0.1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .dots a, .dots a span, .dots a::after { transition: none; }
+  }
+
+  /* ---------- Punktwolken-Sektionen (Cover und Projekte) ---------- */
+  .cloud-screen { --bg: var(--basalt); }
+  .cloud-screen.screen--moss { --bg: var(--moss); }
+  .cloud-screen canvas.cloud {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .cloud-screen .shade {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg,
+      var(--bg) 0%,
+      color-mix(in srgb, var(--bg) 78%, transparent) 32%,
+      transparent 62%);
+  }
+  .cloud-screen .inner { position: relative; z-index: 1; }
+  .cloud-text { max-width: 36rem; }
+  .cloud-title {
+    font-weight: 850;
+    font-stretch: 125%;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin: 0 0 1.5rem;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+  h1.cloud-title { font-size: clamp(2.6rem, 7.5vw, 6.2rem); }
+  h2.cloud-title { font-size: clamp(2.2rem, 5.6vw, 4.6rem); }
+  .cloud-body p {
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    max-width: 32rem;
+    margin: 0 0 0.8em;
+    color: var(--lichen);
+  }
+  .cloud-body p:last-child { margin-bottom: 0; }
+  .cloud-status {
+    position: absolute; z-index: 1; margin: 0;
+    right: clamp(1.25rem, 6vw, 6rem);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
+    max-width: 26rem; text-align: right;
+    font-size: 0.85rem; color: var(--lichen);
+  }
+  .scroll-hint {
+    position: absolute; z-index: 1;
+    left: clamp(1.25rem, 6vw, 6rem);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
+    font-size: 0.9rem;
+    color: var(--lichen);
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 0.6rem;
+  }
+  .scroll-hint svg { width: 14px; height: 14px; }
+
+  @media (max-width: 860px) {
+    .cloud-screen { align-items: flex-start; padding-top: calc(env(safe-area-inset-top, 0px) + 5rem); }
+    .cloud-screen .shade {
+      background: linear-gradient(180deg,
+        var(--bg) 0%,
+        color-mix(in srgb, var(--bg) 80%, transparent) 40%,
+        transparent 65%);
+    }
+    .cloud-status { left: clamp(1.25rem, 6vw, 6rem); text-align: left; bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem); }
+  }
+</style>
+</head>
+<body>
+
+<nav aria-label="Abschnitte">
+  <ul class="dots"></ul>
+</nav>
+
+<main>
+
+<!-- ============ COVER (Inhalt aus cover/) ============ -->
+<section id="hero" class="screen screen--dark cloud-screen" data-tone="dark" data-label="Start">
+  <canvas class="cloud" aria-hidden="true"></canvas>
+  <div class="shade" aria-hidden="true"></div>
+  <div class="inner">
+    <div class="cloud-text">
+      <h1 class="cloud-title">Denkmäler digital erfassen</h1>
+      <div class="cloud-body">
+        <p>Drei Geräte, drei Maßstäbe: vom ganzen Bauwerk über die Fassade bis zur einzelnen Meißelspur.</p>
+      </div>
+    </div>
+  </div>
+  <a class="scroll-hint" href="#sony">
+    <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1v11M2 7l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    Zu den Geräten
+  </a>
+  <p class="cloud-status" role="status" hidden></p>
+</section>
+
+<!-- ============ SONY ============ -->
+<section id="sony" class="screen screen--light" data-tone="light" data-label="Sony α7R IV">
+  <div class="inner device">
+    <div class="device-head">
+      <span class="scale">Maßstab: Oberfläche und Farbe</span>
+      <h2>Sony α7R&nbsp;IV<small>Vollformat-Systemkamera (ILCE-7RM4) für Photogrammetrie</small></h2>
+      <p class="role">Liefert die hochaufgelösten Bilder, aus denen per Structure-from-Motion ein texturiertes 3D-Modell entsteht, und die Farbtextur für Laser- und Streifenlichtscans.</p>
+    </div>
+    <div class="device-art" aria-hidden="true">
+      <svg viewBox="0 0 400 280" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">
+        <path d="M40 90 h70 l18 -28 h104 l18 28 h110 a14 14 0 0 1 14 14 v126 a14 14 0 0 1 -14 14 H40 a14 14 0 0 1 -14 -14 V104 a14 14 0 0 1 14 -14 Z"/>
+        <path d="M26 110 c-10 0 -14 10 -14 30 v60 c0 18 4 30 14 30" />
+        <rect x="150" y="70" width="60" height="14" rx="3"/>
+        <circle cx="222" cy="165" r="66"/>
+        <circle cx="222" cy="165" r="52"/>
+        <circle cx="222" cy="165" r="34" class="accent" stroke="currentColor"/>
+        <circle cx="222" cy="165" r="14"/>
+        <circle cx="330" cy="112" r="7"/>
+        <path d="M60 78 h28" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="device-specs">
+      <dl class="specs">
+        <div class="spec"><dt>Sensor</dt><dd>61 MP, Vollformat BSI-CMOS<span>35,7 × 23,8 mm</span></dd></div>
+        <div class="spec"><dt>Bildgröße</dt><dd>9504 × 6336 px</dd></div>
+        <div class="spec"><dt>Pixel Shift</dt><dd class="accent">bis 240 MP<span>16 Aufnahmen vom Stativ, ideal für Reliefs und Inschriften</span></dd></div>
+        <div class="spec"><dt>Dynamikumfang</dt><dd>ca. 15 Blendenstufen<span>Detail in Schatten und hellem Stein</span></dd></div>
+        <div class="spec"><dt>Stabilisierung</dt><dd>5-Achsen-IBIS, bis 5,5 Stufen</dd></div>
+        <div class="spec"><dt>ISO</dt><dd>100–32.000<span>erweitert 50–102.400</span></dd></div>
+        <div class="spec"><dt>RAW</dt><dd>14 Bit, unkomprimiert möglich</dd></div>
+        <div class="spec"><dt>Gewicht</dt><dd>ca. 665 g<span>staub- und spritzwassergeschützt</span></dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EINSCAN ============ -->
+<section id="einscan" class="screen screen--dark" data-tone="dark" data-label="EinScan H2">
+  <div class="inner device">
+    <div class="device-head">
+      <span class="scale">Maßstab: Ornament und Detail</span>
+      <h2>EinScan H2<small>Handgeführter 3D-Scanner von SHINING&nbsp;3D, Hybrid aus LED und Infrarot</small></h2>
+      <p class="role">Erfasst Kapitelle, Reliefs, Fragmente und Beschädigungen im Submillimeterbereich. Der Infrarotmodus hilft bei dunklem Gestein und im Außeneinsatz.</p>
+    </div>
+    <div class="device-art" aria-hidden="true">
+      <svg viewBox="0 0 400 280" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">
+        <rect x="90" y="40" width="220" height="70" rx="30"/>
+        <circle cx="130" cy="75" r="14"/>
+        <circle cx="270" cy="75" r="14"/>
+        <circle cx="200" cy="75" r="16" class="accent" stroke="currentColor"/>
+        <circle cx="168" cy="75" r="5"/><circle cx="232" cy="75" r="5"/>
+        <path d="M170 110 l-14 120 a12 12 0 0 0 12 13 h30 a12 12 0 0 0 12 -12 l6 -121"/>
+        <path d="M168 150 h44" stroke-linecap="round"/>
+        <path d="M184 243 c0 20 40 20 60 26" stroke-linecap="round"/>
+        <g class="accent" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 6" opacity=".8">
+          <path d="M200 40 L150 0"/><path d="M200 40 L200 0"/><path d="M200 40 L250 0"/>
+        </g>
+      </svg>
+    </div>
+    <div class="device-specs">
+      <dl class="specs">
+        <div class="spec"><dt>Genauigkeit</dt><dd class="accent">bis 0,05 mm<span>LED-Modus; 0,1 mm im IR-Modus</span></dd></div>
+        <div class="spec"><dt>Volumengenauigkeit</dt><dd>0,05 + 0,1 mm/m<span>IR-Modus: 0,1 + 0,3 mm/m</span></dd></div>
+        <div class="spec"><dt>Punktabstand</dt><dd>0,2–3 mm</dd></div>
+        <div class="spec"><dt>Scanrate</dt><dd>bis 1,2 Mio. Punkte/s</dd></div>
+        <div class="spec"><dt>Arbeitsabstand</dt><dd>200–700 mm (LED)<span>200–1500 mm im IR-Modus</span></dd></div>
+        <div class="spec"><dt>Max. Sichtfeld</dt><dd>780 × 900 mm<span>IR-Modus; LED 420 × 440 mm</span></dd></div>
+        <div class="spec"><dt>Lichtquellen</dt><dd>Weißes LED-Licht + 3 IR-VCSEL<span>augensicher, Laserklasse 1</span></dd></div>
+        <div class="spec"><dt>Farbe &amp; Ausrichtung</dt><dd>5-MP-Texturkamera<span>Marker, Geometrie, Hybrid oder Textur</span></dd></div>
+        <div class="spec"><dt>Gewicht</dt><dd>ca. 730 g</dd></div>
+        <div class="spec"><dt>Exportformate</dt><dd>OBJ, STL, PLY, ASC, 3MF</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FARO ============ -->
+<section id="faro" class="screen screen--moss" data-tone="dark" data-label="FARO Focus">
+  <div class="inner device">
+    <div class="device-head">
+      <span class="scale">Maßstab: Bauwerk und Umgebung</span>
+      <h2>FARO Focus<small>Terrestrischer Laserscanner, Focus Core mit 100 m Reichweite</small></h2>
+      <p class="role">Erfasst die Gesamtgeometrie von Fassaden, Innenräumen und Umgebung als farbige Punktwolke und bildet das Referenzgerüst, in das Detailscans und Photogrammetrie eingepasst werden.</p>
+    </div>
+    <div class="device-art" aria-hidden="true">
+      <svg viewBox="0 0 400 300" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">
+        <rect x="150" y="30" width="100" height="120" rx="10"/>
+        <rect x="178" y="58" width="44" height="64" rx="4" class="accent" stroke="currentColor"/>
+        <path d="M178 90 h44" stroke-width="1.5"/>
+        <rect x="160" y="150" width="80" height="16" rx="3"/>
+        <path d="M200 166 v20"/>
+        <path d="M200 186 L120 292 M200 186 L200 296 M200 186 L280 292" stroke-linecap="round"/>
+        <g class="accent" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 7" opacity=".85">
+          <path d="M150 70 C 90 60 50 40 20 10"/>
+          <path d="M150 90 L 10 90"/>
+          <path d="M150 110 C 90 120 50 140 20 170"/>
+          <path d="M250 70 C 310 60 350 40 380 10"/>
+          <path d="M250 90 L 390 90"/>
+          <path d="M250 110 C 310 120 350 140 380 170"/>
+        </g>
+      </svg>
+    </div>
+    <div class="device-specs">
+      <dl class="specs">
+        <div class="spec"><dt>Reichweite</dt><dd class="accent">bis 100 m</dd></div>
+        <div class="spec"><dt>3D-Genauigkeit</dt><dd>ca. 2 mm bei 10 m</dd></div>
+        <div class="spec"><dt>Messrate</dt><dd>bis 2 Mio. Punkte/s</dd></div>
+        <div class="spec"><dt>Sichtfeld</dt><dd>300° vertikal × 360° horizontal</dd></div>
+        <div class="spec"><dt>Farbe</dt><dd>HDR-Kamera, bis 165 MP<span>Belichtungsreihen 2×, 3×, 5×</span></dd></div>
+        <div class="spec"><dt>Laser</dt><dd>Klasse 1, 1550 nm<span>augensicher, auch bei Publikumsverkehr</span></dd></div>
+        <div class="spec"><dt>Robustheit</dt><dd>IP54, −20 bis 55 °C</dd></div>
+        <div class="spec"><dt>Gewicht</dt><dd>4,2 kg inkl. Akku</dd></div>
+        <div class="spec"><dt>Registrierung</dt><dd>Vor Ort mit FARO Stream<span>Weiterverarbeitung in SCENE, Export u. a. als E57</span></dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ZUSAMMENSPIEL ============ -->
+<section id="zusammen" class="screen screen--light closing" data-tone="light" data-label="Zusammenspiel">
+  <div class="inner">
+    <h2>Vom Gesamtbauwerk zur Meißelspur</h2>
+    <ol class="ladder">
+      <li><strong>FARO Focus</strong><span class="res">Millimeter, bis 100 m</span><span>Gesamtgeometrie und Referenzrahmen für alle weiteren Daten</span></li>
+      <li><strong>Sony α7R IV</strong><span class="res">bis 240 MP pro Bild</span><span>Photogrammetrie mittlerer Bereiche und farbtreue Texturen</span></li>
+      <li><strong>EinScan H2</strong><span class="res">bis 0,05 mm</span><span>Ornamente, Inschriften und Schadensbilder im Detail</span></li>
+    </ol>
+    <p class="note">Alle Werte sind Herstellerangaben (<a href="https://www.sony.com">Sony</a>, <a href="https://www.shining3d.com/professional-solutions/hybrid-light-source-handheld-3d-scanners/einscan-h2">SHINING&nbsp;3D</a>, <a href="https://www.faro.com/en/Products/Hardware/Focus-Laser-Scanners">FARO</a>) und hängen in der Praxis von Oberfläche, Licht und Abstand ab.</p>
+  </div>
+</section>
+
+
+<!-- ============ PROJEKTE (werden aus projects/ erzeugt) ============ -->
+<div id="projects"></div>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const MAX_POINTS = 150000;          // Standard-Obergrenze pro Punktwolke
+  const STONE = [200, 161, 101];      // Farbe für Punktwolken ohne eigene Farben
+  const FRESH = [228, 231, 225];      // Farbe der gerade "gescannten" Punkte
+
+  /* =========================================================
+     1. Ordnerliste: manifest.json, sonst GitHub-API
+     ========================================================= */
+  const toUrl = (p) => p.split('/').map(encodeURIComponent).join('/');
+
+  async function fetchOk(path, opts) {
+    const r = await fetch(toUrl(path), opts);
+    if (!r.ok) throw new Error(r.status === 404 ? `${path} nicht gefunden` : `${path}: HTTP ${r.status}`);
+    return r;
+  }
+
+  function pickFiles(dir, names) {
+    names = names.slice().sort((a, b) => a.localeCompare(b));
+    const txt = names.find((n) => n.toLowerCase().endsWith('.txt'));
+    const ply = names.find((n) => n.toLowerCase().endsWith('.ply'));
+    const cfg = names.includes('config.json') ? 'config.json' : null;
+    const j = (f) => (f ? `${dir}/${f}` : null);
+    return { path: dir, text: j(txt), ply: j(ply), config: j(cfg) };
+  }
+
+  async function manifestFromGitHub() {
+    const host = location.hostname;
+    if (!host.endsWith('.github.io')) throw new Error('Nicht auf github.io');
+    const owner = host.slice(0, -'.github.io'.length);
+    const seg = location.pathname.split('/').filter(Boolean)[0];
+    const repos = seg && !seg.includes('.') ? [seg, host] : [host];
+
+    for (const repo of repos) {
+      const api = `https://api.github.com/repos/${owner}/${repo}/contents/`;
+      const list = async (p) => {
+        const r = await fetch(api + toUrl(p));
+        if (!r.ok) throw new Error(`GitHub-API ${r.status}`);
+        return r.json();
+      };
+      let cover = null, projects = [];
+      try { cover = pickFiles('cover', (await list('cover')).map((f) => f.name)); } catch (e) { /* kein Cover */ }
+      try {
+        const dirs = (await list('projects')).filter((f) => f.type === 'dir')
+          .sort((a, b) => a.name.localeCompare(b.name));
+        projects = await Promise.all(dirs.map(async (d) =>
+          pickFiles(d.path, (await list(d.path)).map((f) => f.name))));
+      } catch (e) { /* keine Projekte */ }
+      if (cover || projects.length) return { cover, projects };
+    }
+    throw new Error('Keine Ordner über die GitHub-API gefunden');
+  }
+
+  async function loadManifest() {
+    try { return await (await fetchOk('manifest.json', { cache: 'no-cache' })).json(); }
+    catch (e) { console.info('manifest.json fehlt, versuche GitHub-API …'); }
+    try { return await manifestFromGitHub(); }
+    catch (e) {
+      console.warn('Ordner cover/ und projects/ konnten nicht gelesen werden. ' +
+        'Lokal zuerst "python3 tools/build_manifest.py" ausführen und die Seite über einen Webserver öffnen.', e);
+      return null;
+    }
+  }
+
+  /* =========================================================
+     2. Textdatei: erster Satz = Überschrift, Rest = Text
+     ========================================================= */
+  async function fetchText(path) {
+    const buf = await (await fetchOk(path)).arrayBuffer();
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+    catch (e) { return new TextDecoder('windows-1252').decode(buf); } // ältere Windows-Editoren
+  }
+
+  function splitText(raw) {
+    const t = raw.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trim();
+    // Überschrift endet am ersten Satzende (. ! ? gefolgt von Leerraum) oder am ersten Zeilenumbruch
+    const m = t.match(/^([\s\S]*?)(?:([.!?])(?=\s|$)|\n)/);
+    let title = t, rest = '';
+    if (m) {
+      title = m[1] + (m[2] && m[2] !== '.' ? m[2] : '');
+      rest = t.slice(m[0].length);
+    }
+    const paras = rest.trim().split(/\n\s*\n/)
+      .map((p) => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
+    return { title: title.replace(/\s+/g, ' ').trim(), paras };
+  }
+
+  /* =========================================================
+     3. PLY-Parser (ASCII und binär, mit oder ohne Farbe)
+     ========================================================= */
+  const PLY_TYPES = {
+    char: ['Int8', 1], int8: ['Int8', 1], uchar: ['Uint8', 1], uint8: ['Uint8', 1],
+    short: ['Int16', 2], int16: ['Int16', 2], ushort: ['Uint16', 2], uint16: ['Uint16', 2],
+    int: ['Int32', 4], int32: ['Int32', 4], uint: ['Uint32', 4], uint32: ['Uint32', 4],
+    float: ['Float32', 4], float32: ['Float32', 4], double: ['Float64', 8], float64: ['Float64', 8],
+  };
+
+  function parsePLY(buf, maxPts) {
+    const bytes = new Uint8Array(buf);
+    const head = new TextDecoder('latin1').decode(bytes.subarray(0, Math.min(bytes.length, 65536)));
+    const endIdx = head.indexOf('end_header');
+    if (!head.startsWith('ply') || endIdx < 0) throw new Error('keine gültige PLY-Datei');
+    let bodyStart = endIdx + 'end_header'.length;
+    if (head[bodyStart] === '\r') bodyStart++;
+    if (head[bodyStart] === '\n') bodyStart++;
+
+    let format = null;
+    const elements = [];
+    for (const line of head.slice(0, endIdx).split(/\r?\n/)) {
+      const p = line.trim().split(/\s+/);
+      if (p[0] === 'format') format = p[1];
+      else if (p[0] === 'element') elements.push({ name: p[1], count: +p[2], props: [] });
+      else if (p[0] === 'property' && elements.length) {
+        const el = elements[elements.length - 1];
+        if (p[1] === 'list') el.props.push({ list: true, type: p[3], name: p[4] });
+        else el.props.push({ type: p[1], name: p[2] });
+      }
+    }
+    const vIdx = elements.findIndex((e) => e.name === 'vertex');
+    if (vIdx < 0) throw new Error('keine Punkte (vertex) in der PLY-Datei');
+    const v = elements[vIdx];
+    const names = v.props.map((p) => p.name);
+    const ix = names.indexOf('x'), iy = names.indexOf('y'), iz = names.indexOf('z');
+    if (ix < 0 || iy < 0 || iz < 0) throw new Error('PLY ohne x/y/z-Koordinaten');
+    const ci = [['red', 'green', 'blue'], ['r', 'g', 'b'], ['diffuse_red', 'diffuse_green', 'diffuse_blue']]
+      .map((set) => set.map((n) => names.indexOf(n))).find((s) => s.every((i) => i >= 0)) || null;
+
+    const stride = Math.max(1, Math.ceil(v.count / maxPts));
+    const cap = Math.ceil(v.count / stride);
+    const pos = new Float64Array(cap * 3);   // Float64: Landeskoordinaten (UTM) bleiben genau
+    const col = ci ? new Uint8Array(cap * 3) : null;
+    let cScale = 1;
+    if (ci) {
+      const ct = v.props[ci[0]].type;
+      if (ct.startsWith('float') || ct === 'double') cScale = 255;
+      else if (ct === 'ushort' || ct === 'uint16') cScale = 1 / 257;
+    }
+    let k = 0;
+
+    if (format === 'ascii') {
+      if (v.props.some((p) => p.list)) throw new Error('PLY-Aufbau wird nicht unterstützt (Listen bei Punkten)');
+      const rows = new TextDecoder('latin1').decode(bytes.subarray(bodyStart)).split('\n');
+      let off = 0;
+      for (let e = 0; e < vIdx; e++) off += elements[e].count;
+      for (let i = 0; i < v.count && off + i < rows.length; i += stride) {
+        const f = rows[off + i].trim().split(/\s+/);
+        pos[k * 3] = +f[ix]; pos[k * 3 + 1] = +f[iy]; pos[k * 3 + 2] = +f[iz];
+        if (col) for (let c = 0; c < 3; c++) col[k * 3 + c] = Math.max(0, Math.min(255, +f[ci[c]] * cScale));
+        k++;
+      }
+    } else if (format === 'binary_little_endian' || format === 'binary_big_endian') {
+      const little = format === 'binary_little_endian';
+      const dv = new DataView(buf, bodyStart);
+      let off = 0;
+      for (let e = 0; e < vIdx; e++) {
+        if (elements[e].props.some((p) => p.list)) throw new Error('PLY-Aufbau wird nicht unterstützt');
+        off += elements[e].count * elements[e].props.reduce((s, p) => s + PLY_TYPES[p.type][1], 0);
+      }
+      if (v.props.some((p) => p.list)) throw new Error('PLY-Aufbau wird nicht unterstützt (Listen bei Punkten)');
+      const offs = []; let rec = 0;
+      for (const p of v.props) {
+        if (!PLY_TYPES[p.type]) throw new Error(`unbekannter PLY-Datentyp "${p.type}"`);
+        offs.push(rec); rec += PLY_TYPES[p.type][1];
+      }
+      const get = (i) => {
+        const fn = 'get' + PLY_TYPES[v.props[i].type][0], o = offs[i];
+        return (base) => dv[fn](base + o, little);
+      };
+      const gx = get(ix), gy = get(iy), gz = get(iz);
+      const gc = ci ? ci.map(get) : null;
+      for (let i = 0; i < v.count; i += stride) {
+        const base = off + i * rec;
+        if (base + rec > dv.byteLength) break; // abgeschnittene Datei
+        pos[k * 3] = gx(base); pos[k * 3 + 1] = gy(base); pos[k * 3 + 2] = gz(base);
+        if (gc) for (let c = 0; c < 3; c++) col[k * 3 + c] = Math.max(0, Math.min(255, gc[c](base) * cScale));
+        k++;
+      }
+    } else {
+      throw new Error(`PLY-Format "${format}" wird nicht unterstützt`);
+    }
+    if (!k) throw new Error('PLY-Datei enthält keine Punkte');
+    return { pos, col, n: k };
+  }
+
+  /* Zentrieren, skalieren, Hochachse umstellen, Scan-Reihenfolge berechnen */
+  function normalizeCloud(raw, up) {
+    const zUp = up !== 'y';
+    const { pos: p, n } = raw;
+    const get = (i, a) => (a === 0 ? p[i * 3]
+      : a === 1 ? (zUp ? p[i * 3 + 2] : p[i * 3 + 1])
+      : (zUp ? -p[i * 3 + 1] : p[i * 3 + 2]));
+    const lo = [], hi = [];
+    const step = Math.max(1, Math.floor(n / 20000));
+    for (let a = 0; a < 3; a++) {
+      const s = [];
+      for (let i = 0; i < n; i += step) s.push(get(i, a));
+      s.sort((x, y) => x - y);
+      lo[a] = s[Math.floor(s.length * 0.01)];
+      hi[a] = s[Math.min(s.length - 1, Math.floor(s.length * 0.99))];
+    }
+    const c = [0, 1, 2].map((a) => (lo[a] + hi[a]) / 2);
+    const k = 3 / (Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) || 1);
+    const out = new Float32Array(n * 3), order = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (get(i, 0) - c[0]) * k, y = (get(i, 1) - c[1]) * k, z = (get(i, 2) - c[2]) * k;
+      out[i * 3] = x; out[i * 3 + 1] = y; out[i * 3 + 2] = z;
+      order[i] = (Math.atan2(x, z) + Math.PI) / (Math.PI * 2);
+    }
+    return { pos: out, col: raw.col ? raw.col.subarray(0, n * 3) : null, n, order };
+  }
+
+  /* Ersatz, falls im Cover keine Punktwolke liegt: prozeduraler Triumphbogen */
+  function archCloud() {
+    const pts = [], rnd = Math.random;
+    const W = 1.5, H = 2.4, D = 0.3, ow = 0.55, spring = 1.1;
+    const inOpening = (x, y) => Math.abs(x) <= ow && (y < spring || x * x + (y - spring) ** 2 < ow * ow);
+    for (let i = 0; i < 7000; i++) {
+      const x = (rnd() * 2 - 1) * W, y = rnd() * H;
+      if (!inOpening(x, y)) pts.push(x, y, rnd() < 0.5 ? -D : D);
+    }
+    for (let i = 0; i < 1600; i++) {
+      const z = (rnd() * 2 - 1) * D;
+      if (rnd() < 0.45) pts.push((rnd() < 0.5 ? -1 : 1) * ow, rnd() * spring, z);
+      else { const a = rnd() * Math.PI; pts.push(Math.cos(a) * ow, spring + Math.sin(a) * ow, z); }
+    }
+    for (let i = 0; i < 900; i++) pts.push((rnd() < 0.5 ? -W : W), rnd() * H, (rnd() * 2 - 1) * D);
+    [-1.2, -0.8, 0.8, 1.2].forEach((cx) => {
+      for (let i = 0; i < 450; i++) {
+        const a = rnd() * Math.PI;
+        pts.push(cx + Math.cos(a) * 0.1, 0.15 + rnd() * 1.75, -D - Math.sin(a) * 0.1);
+      }
+    });
+    for (let i = 0; i < 1200; i++) pts.push((rnd() * 2 - 1) * (W + 0.08), 1.9 + rnd() * 0.08, -D - 0.08 + rnd() * 0.02);
+    for (let i = 0; i < 2600; i++) {
+      const r = Math.sqrt(rnd()) * 3.2, a = rnd() * Math.PI * 2;
+      pts.push(Math.cos(a) * r, 0, Math.sin(a) * r * 0.8);
+    }
+    return { pos: Float64Array.from(pts), col: null, n: pts.length / 3 };
+  }
+
+  /* =========================================================
+     4. Renderer: Punktwolke mit Tiefenpuffer auf Canvas
+     ========================================================= */
+  const views = new Set();
+
+  class CloudView {
+    constructor(section, cloud, cfg) {
+      this.canvas = section.querySelector('canvas.cloud');
+      this.ctx = this.canvas.getContext('2d');
+      this.cloud = cloud;
+      this.yaw = ((cfg.yaw ?? -25) * Math.PI) / 180;
+      this.zoom = cfg.zoom ?? 1;
+      this.pointSize = cfg.pointSize ?? 1.2;
+      this.useColor = cfg.colors !== 'stone' && !!cloud.col;
+      this.visible = false;
+      this.t0 = null;
+      this.img = null;
+      views.add(this);
+      new IntersectionObserver(([e]) => {
+        this.visible = e.isIntersecting;
+        if (this.visible) {
+          this.alloc();
+          if (this.t0 === null) this.t0 = performance.now();
+          if (reduce) this.draw(this.yaw, 1);
+        } else {
+          this.img = this.buf = this.zb = null; // Speicher freigeben
+        }
+      }, { rootMargin: '120px' }).observe(this.canvas);
+    }
+
+    alloc() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const w = Math.max(1, Math.round(this.canvas.clientWidth * dpr));
+      const h = Math.max(1, Math.round(this.canvas.clientHeight * dpr));
+      if (this.img && this.img.width === w && this.img.height === h) return;
+      this.canvas.width = w; this.canvas.height = h; this.dpr = dpr;
+      this.img = this.ctx.createImageData(w, h);
+      this.buf = new Uint32Array(this.img.data.buffer);
+      this.zb = new Float32Array(w * h);
+    }
+
+    frame(t) {
+      if (!this.img) this.alloc();
+      const el = (t - this.t0) / 1000;
+      this.draw(this.yaw + Math.sin(el * 0.18) * 0.35, Math.min(1, el / 2.8));
+    }
+
+    draw(angle, reveal) {
+      const { img, buf, zb } = this;
+      if (!img) return;
+      const W = img.width, H = img.height;
+      buf.fill(0); zb.fill(1e9);
+      const narrow = this.canvas.clientWidth < 860;
+      const cx = (narrow ? 0.5 : 0.66) * W, cy = (narrow ? 0.7 : 0.52) * H;
+      const sc = Math.min(W, H) * (narrow ? 0.22 : 0.22) * this.zoom;
+      const ca = Math.cos(angle), sa = Math.sin(angle);
+      const ct = Math.cos(0.26), st = Math.sin(0.26);
+      const s = Math.max(1, Math.round(this.pointSize * this.dpr));
+      const { pos, col, n, order } = this.cloud;
+      const useColor = this.useColor;
+
+      for (let i = 0; i < n; i++) {
+        const ord = order[i];
+        if (ord > reveal) continue;
+        const x0 = pos[i * 3], y0 = pos[i * 3 + 1], z0 = pos[i * 3 + 2];
+        const x = x0 * ca - z0 * sa;
+        const z = x0 * sa + z0 * ca;
+        const y2 = y0 * ct - z * st;
+        const z2 = y0 * st + z * ct + 6;
+        if (z2 < 0.5) continue;
+        const f = 6 / z2;
+        const px = (cx + x * sc * f) | 0, py = (cy - y2 * sc * f) | 0;
+        if (px < 0 || py < 0 || px >= W - s || py >= H - s) continue;
+        const depth = Math.max(0, Math.min(1, (8 - z2) / 4));
+        let r, g, b;
+        if (reveal < 1 && reveal - ord < 0.02) { r = FRESH[0]; g = FRESH[1]; b = FRESH[2]; }
+        else {
+          const k = 0.55 + depth * 0.45;
+          if (useColor) { r = col[i * 3] * k; g = col[i * 3 + 1] * k; b = col[i * 3 + 2] * k; }
+          else { r = STONE[0] * k; g = STONE[1] * k; b = STONE[2] * k; }
+        }
+        const a = (150 + depth * 105) | 0;
+        const px32 = (a << 24) | ((b & 255) << 16) | ((g & 255) << 8) | (r & 255);
+        for (let dy = 0; dy < s; dy++) {
+          let idx = (py + dy) * W + px;
+          for (let dx = 0; dx < s; dx++, idx++) {
+            if (z2 < zb[idx]) { zb[idx] = z2; buf[idx] = px32; }
+          }
+        }
+      }
+      this.ctx.putImageData(img, 0, 0);
+    }
+  }
+
+  function loop(t) {
+    for (const v of views) if (v.visible && v.t0 !== null) v.frame(t);
+    requestAnimationFrame(loop);
+  }
+  if (!reduce) requestAnimationFrame(loop);
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      for (const v of views) if (v.visible) { v.img = null; v.alloc(); if (reduce) v.draw(v.yaw, 1); }
+    }, 150);
+  });
+
+  /* =========================================================
+     5. Sektionen befüllen
+     ========================================================= */
+  function setStatus(sec, msg) {
+    const el = sec.querySelector('.cloud-status');
+    if (!el) return;
+    el.hidden = !msg;
+    el.textContent = msg || '';
+  }
+
+  const prettify = (name) => name.replace(/^\d+[\s._-]*/, '').replace(/[_-]+/g, ' ').trim() || name;
+  const slug = (s) => s.toLowerCase().replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'projekt';
+
+  async function fillText(sec, entry) {
+    if (!entry || !entry.text) return;
+    try {
+      const { title, paras } = splitText(await fetchText(entry.text));
+      if (title) {
+        sec.querySelector('.cloud-title').textContent = title;
+        sec.dataset.label = title;
+      }
+      sec.querySelector('.cloud-body').replaceChildren(...paras.map((t) => {
+        const p = document.createElement('p'); p.textContent = t; return p;
+      }));
+    } catch (e) {
+      console.error(e);
+      setStatus(sec, `Text konnte nicht geladen werden: ${e.message}`);
+    }
+  }
+
+  async function loadCloud(sec, entry, isCover) {
+    let cfg = {};
+    if (entry && entry.config) {
+      try { cfg = await (await fetchOk(entry.config)).json(); }
+      catch (e) { console.warn(`config.json in ${entry.path} ist ungültig und wird ignoriert.`, e); }
+    }
+    if (entry && entry.ply) {
+      setStatus(sec, 'Punktwolke wird geladen …');
+      try {
+        const buf = await (await fetchOk(entry.ply)).arrayBuffer();
+        const raw = parsePLY(buf, cfg.maxPoints || MAX_POINTS);
+        new CloudView(sec, normalizeCloud(raw, cfg.up), cfg);
+        setStatus(sec, null);
+        return;
+      } catch (e) {
+        console.error(e);
+        setStatus(sec, `Punktwolke konnte nicht geladen werden: ${e.message}`);
+      }
+    }
+    if (isCover) new CloudView(sec, normalizeCloud(archCloud(), 'y'), { yaw: -26 });
+  }
+
+  function makeProjectSection(entry, i, total) {
+    const folder = entry.path.split('/').pop();
+    const sec = document.createElement('section');
+    sec.className = 'screen cloud-screen ' + (i % 2 ? 'screen--moss' : 'screen--dark');
+    sec.id = 'projekt-' + slug(folder);
+    sec.dataset.tone = 'dark';
+    sec.dataset.label = prettify(folder);
+    sec.innerHTML =
+      '<canvas class="cloud" aria-hidden="true"></canvas>' +
+      '<div class="shade" aria-hidden="true"></div>' +
+      '<div class="inner"><div class="cloud-text">' +
+      `<span class="scale">Projekt ${i + 1} von ${total}</span>` +
+      '<h2 class="cloud-title"></h2><div class="cloud-body"></div>' +
+      '</div></div>' +
+      '<p class="cloud-status" role="status" hidden></p>';
+    sec.querySelector('.cloud-title').textContent = prettify(folder);
+    return sec;
+  }
+
+  function buildNav() {
+    const nav = document.querySelector('.dots');
+    const sections = [...document.querySelectorAll('main .screen')];
+    nav.replaceChildren(...sections.map((s) => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + s.id;
+      const span = document.createElement('span');
+      span.textContent = s.dataset.label || s.id;
+      a.append(span); li.append(a);
+      return li;
+    }));
+    const links = nav.querySelectorAll('a');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        links.forEach((l) => l.setAttribute('aria-current', l.getAttribute('href') === '#' + e.target.id ? 'true' : 'false'));
+        document.body.dataset.tone = e.target.dataset.tone || 'dark';
+      });
+    }, { threshold: 0.55 });
+    sections.forEach((s) => obs.observe(s));
+  }
+
+  async function init() {
+    const manifest = await loadManifest();
+    const cover = document.getElementById('hero');
+    const coverEntry = manifest && manifest.cover;
+    const projects = (manifest && manifest.projects) || [];
+
+    const host = document.getElementById('projects');
+    const sections = projects.map((p, i) => {
+      const sec = makeProjectSection(p, i, projects.length);
+      host.appendChild(sec);
+      return sec;
+    });
+
+    await Promise.all([fillText(cover, coverEntry), ...sections.map((s, i) => fillText(s, projects[i]))]);
+    buildNav();
+
+    loadCloud(cover, coverEntry, true);
+    sections.forEach((s, i) => loadCloud(s, projects[i], false));
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>

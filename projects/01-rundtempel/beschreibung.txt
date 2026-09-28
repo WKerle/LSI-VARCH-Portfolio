@@ -1,0 +1,4 @@
+Rundtempel im Schlosspark
+Beispielprojekt: Ein Monopteros mit zwölf Säulen, erfasst mit dem FARO Focus von acht Standpunkten aus. Die Punktwolke liegt in UTM-Koordinaten vor und hat keine Farbinformation.
+
+Ersetze diesen Ordner durch dein eigenes Projekt.
