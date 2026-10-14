@@ -1,0 +1,1 @@
+Obelisk am Marktplatz. Beispielprojekt mit einer ASCII-PLY-Datei und Punktfarben aus der Kamera. Die Farben der Punktwolke werden übernommen.
