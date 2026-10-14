@@ -1,2 +1,3 @@
-Digitale Archäologie an der Uni Konstanz. 
-Unser Portfolio an Geräten und Projekten
+Virtuelle Archäologie
+- am Lehrstuhl für Life Science Informatics an der Uni Konstanz.
+Dies ist unser Portfolio an Geräten und Projekten.
