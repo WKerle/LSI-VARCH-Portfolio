@@ -1,1 +1,2 @@
-Obelisk am Marktplatz. Beispielprojekt mit einer ASCII-PLY-Datei und Punktfarben aus der Kamera. Die Farben der Punktwolke werden übernommen.
+Petrarvella
+Im Rahmen eines wissenschaftlichen Austausches waren wir beteiligt am Vermessen des Monte Petrarvella.
