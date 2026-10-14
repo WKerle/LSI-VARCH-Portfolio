@@ -1,3 +1,3 @@
-Maxentius Mausoleum
-Eine digitale Rekonstruktion basierend auf Rasch's Arbeit.
+Das Maxentius Mausoleum.
+Eine digitale Rekonstruktion des Mausoleums haben wir, basierend auf Rasch's Arbeit, erstellt und publiziert.
 

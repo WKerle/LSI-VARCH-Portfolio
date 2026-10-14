@@ -1,1 +1,2 @@
-Obelisk am Marktplatz. Beispielprojekt mit einer ASCII-PLY-Datei und Punktfarben aus der Kamera. Die Farben der Punktwolke werden übernommen.
+Das Maxentius Mausoleum.
+Durch die Kombination aus Laserscanning, Photogrammetrie und Modellierung können Rekonstruktionshypothesen in den Gesamtkontext eines Monuments gesetzt werden.
