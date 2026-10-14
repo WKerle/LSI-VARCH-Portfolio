@@ -217,7 +217,13 @@
   }
 
   /* ---------- Punktwolken-Sektionen (Cover und Projekte) ---------- */
-  .cloud-screen { --bg: var(--basalt); }
+  .cloud-screen {
+    --bg: var(--basalt);
+    --cloud-right: clamp(1.25rem, 6vw, 6rem);
+    --cloud-width: min(46vw, 640px);
+    --cloud-height: min(74vh, 680px);
+    --cloud-y: 52%;
+  }
   .cloud-screen.screen--moss { --bg: var(--moss); }
   .cloud-screen canvas.cloud {
     position: absolute; inset: 0;
@@ -226,14 +232,17 @@
   }
   .cloud-screen .cloud-media {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    right: var(--cloud-right);
+    top: var(--cloud-y);
+    transform: translateY(-50%);
+    width: var(--cloud-width);
+    height: var(--cloud-height);
     display: block;
+    z-index: 0;
   }
   .cloud-screen img.cloud-media {
-    object-fit: cover;
-    object-position: center;
+    object-fit: contain;
+    object-position: center right;
   }
   .cloud-screen model-viewer.cloud-media {
     --poster-color: transparent;
@@ -285,6 +294,12 @@
   .scroll-hint svg { width: 14px; height: 14px; }
 
   @media (max-width: 860px) {
+    .cloud-screen {
+      --cloud-right: 50%;
+      --cloud-width: min(86vw, 560px);
+      --cloud-height: min(56vh, 520px);
+      --cloud-y: 70%;
+    }
     .cloud-screen { align-items: flex-start; padding-top: calc(env(safe-area-inset-top, 0px) + 5rem); }
     .cloud-screen .shade {
       background: linear-gradient(180deg,
@@ -292,6 +307,7 @@
         color-mix(in srgb, var(--bg) 80%, transparent) 40%,
         transparent 65%);
     }
+    .cloud-screen .cloud-media { transform: translate(-50%, -50%); }
     .cloud-status { left: clamp(1.25rem, 6vw, 6rem); text-align: left; bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem); }
   }
 </style>
