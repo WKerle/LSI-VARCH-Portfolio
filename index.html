@@ -483,6 +483,7 @@
       sections: 'Abschnitte',
       language: 'Sprache',
       scrollToDevices: 'Zu den Geraeten',
+      scrollToProjects: 'Zu den Projekten',
       projectOf: (i, total) => `Projekt ${i} von ${total}`,
       textLoadError: (msg) => `Text konnte nicht geladen werden: ${msg}`,
       mediaLoading: '3D-Datei wird geladen ...',
@@ -494,6 +495,7 @@
       sections: 'Sections',
       language: 'Language',
       scrollToDevices: 'Go to devices',
+      scrollToProjects: 'Go to projects',
       projectOf: (i, total) => `Project ${i} of ${total}`,
       textLoadError: (msg) => `Could not load text: ${msg}`,
       mediaLoading: 'Loading 3D file ...',
@@ -1079,23 +1081,29 @@
         a.setAttribute('aria-current', code === LANG ? 'true' : 'false');
       });
     }
-    const scrollHint = document.querySelector('.scroll-hint');
-    if (scrollHint) {
-      const txt = scrollHint.childNodes[scrollHint.childNodes.length - 1];
-      if (txt && txt.nodeType === Node.TEXT_NODE) txt.textContent = ` ${T.scrollToDevices}`;
-    }
-
     const manifest = await loadManifest();
     const cover = document.getElementById('hero');
     const coverEntry = manifest && manifest.cover;
     const projects = (manifest && manifest.projects) || [];
 
     const host = document.getElementById('projects');
+    const sony = document.getElementById('sony');
+    if (host && sony && sony.parentNode) sony.parentNode.insertBefore(host, sony);
     const sections = projects.map((p, i) => {
       const sec = makeProjectSection(p, i, projects.length);
       host.appendChild(sec);
       return sec;
     });
+
+    const scrollHint = document.querySelector('.scroll-hint');
+    if (scrollHint) {
+      const firstTarget = sections.length ? `#${sections[0].id}` : '#sony';
+      scrollHint.setAttribute('href', firstTarget);
+      const txt = scrollHint.childNodes[scrollHint.childNodes.length - 1];
+      if (txt && txt.nodeType === Node.TEXT_NODE) {
+        txt.textContent = ` ${sections.length ? T.scrollToProjects : T.scrollToDevices}`;
+      }
+    }
 
     await Promise.all([fillText(cover, coverEntry), ...sections.map((s, i) => fillText(s, projects[i]))]);
     buildNav();
