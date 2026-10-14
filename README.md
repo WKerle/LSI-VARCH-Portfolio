@@ -7,12 +7,14 @@ One-Page-Website mit Vollbild-Abschnitten: Cover, die drei Geräte und danach al
 ```
 index.html
 cover/                  ← erster Bildschirm
-  text.txt
-  cloud.ply
+  text.de.txt
+  text.en.txt
+  cloud.ply | model.glb | foto.jpg
 projects/               ← jedes Unterverzeichnis wird ein Abschnitt
   01-rundtempel/
-    beschreibung.txt
-    rundtempel.ply
+    beschreibung.de.txt
+    beschreibung.en.txt
+    rundtempel.ply | rundtempel.glb | rundtempel.jpg
     config.json         (optional)
   02-obelisk/
     text.txt
@@ -21,7 +23,12 @@ tools/build_manifest.py
 .github/workflows/pages.yml
 ```
 
-Pro Ordner wird die erste `.txt`- und die erste `.ply`-Datei verwendet, der Dateiname ist egal.
+Pro Ordner wird die erste passende Textdatei und genau ein Hauptmedium verwendet:
+
+- Rotierend: zuerst `.ply`, sonst `.glb`
+- Statisch: falls kein 3D-Modell da ist, ein Bild (`.png`, `.jpg`, `.jpeg`, `.webp`, `.avif`, `.gif`)
+
+Der Dateiname ist egal.
 Projekte erscheinen alphabetisch nach Ordnernamen. Mit Präfixen wie `01-`, `02-` legst du die Reihenfolge fest.
 
 ## Textdatei
@@ -37,6 +44,32 @@ Eine Leerzeile beginnt einen neuen Absatz.
 Die Überschrift endet am ersten `.`, `!` oder `?` mit folgendem Leerzeichen oder am ersten Zeilenumbruch.
 Enthält die Überschrift selbst einen Punkt (z. B. „St. Michael“), schreib sie allein in die erste Zeile ohne Punkt am Ende.
 Speichere die Datei am besten als UTF-8. Ältere Windows-Kodierung wird aber auch erkannt.
+
+### Mehrsprachig (Deutsch/Englisch)
+
+Es gibt zwei Wege:
+
+1. Zwei Dateien pro Ordner: `*.de.txt` und `*.en.txt` (empfohlen)
+2. Eine Datei mit Blöcken:
+
+   ```
+   [de]
+   Deutscher Titel. Deutscher Absatz.
+
+   [en]
+   English title. English paragraph.
+   ```
+
+Sprachwechsel im Frontend: `?lang=de` oder `?lang=en` (plus DE/EN-Schalter oben links).
+
+## GLB-Modell (.glb)
+
+`.glb`-Dateien werden als rotierendes 3D-Modell eingebunden (Web Component `model-viewer`).
+Wenn zusätzlich eine `.ply` im selben Ordner liegt, hat `.ply` Vorrang.
+
+## Statisches Bild
+
+Wenn nur ein Bild vorhanden ist, wird es vollflächig als nicht-rotierendes Hintergrundmedium angezeigt.
 
 ## Punktwolke (.ply)
 
@@ -79,7 +112,7 @@ Die Optionen bedeuten:
 2. Unter **Settings → Pages → Build and deployment → Source** die Option **GitHub Actions** wählen.
 3. Pushen. Die Action erzeugt `manifest.json` aus den Ordnern und veröffentlicht die Seite. Den Fortschritt siehst du im Tab **Actions**.
 
-Ein neues Projekt anlegen heißt dann nur: Ordner in `projects/` anlegen, Textdatei und PLY hineinlegen, pushen.
+Ein neues Projekt anlegen heißt dann nur: Ordner in `projects/` anlegen, Textdatei und Medium (`.ply`, `.glb` oder Bild) hineinlegen, pushen.
 
 Ohne GitHub Action liest die Seite die Ordner als Rückfall über die GitHub-API. Das klappt nur bei öffentlichen Repositories und ist auf 60 Abfragen pro Stunde und Besucher begrenzt.
 

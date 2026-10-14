@@ -177,6 +177,25 @@
   .dots a[aria-current="true"]::after { background: currentColor; transform: scale(1.25); }
   body[data-tone="light"] .dots { --dot-color: var(--ink); }
 
+  .lang-switch {
+    position: fixed;
+    z-index: 12;
+    top: calc(env(safe-area-inset-top, 0px) + 0.9rem);
+    left: clamp(0.75rem, 2vw, 1.75rem);
+    display: inline-flex;
+    gap: 0.35rem;
+  }
+  .lang-switch a {
+    display: inline-block;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    text-decoration: none;
+    opacity: 0.8;
+  }
+  .lang-switch a[aria-current="true"] { opacity: 1; background: color-mix(in srgb, currentColor 14%, transparent); }
+
   /* ---------- Responsiv ---------- */
   @media (max-width: 860px) {
     html { scroll-snap-type: y proximity; }
@@ -204,6 +223,21 @@
     position: absolute; inset: 0;
     width: 100%; height: 100%;
     display: block;
+  }
+  .cloud-screen .cloud-media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .cloud-screen img.cloud-media {
+    object-fit: cover;
+    object-position: center;
+  }
+  .cloud-screen model-viewer.cloud-media {
+    --poster-color: transparent;
+    background: transparent;
   }
   .cloud-screen .shade {
     position: absolute; inset: 0; pointer-events: none;
@@ -267,6 +301,10 @@
 <nav aria-label="Abschnitte">
   <ul class="dots"></ul>
 </nav>
+<div class="lang-switch" aria-label="Sprache">
+  <a href="?lang=de" data-lang-link="de">DE</a>
+  <a href="?lang=en" data-lang-link="en">EN</a>
+</div>
 
 <main>
 
@@ -434,6 +472,37 @@
   const MAX_POINTS = 150000;          // Standard-Obergrenze pro Punktwolke
   const STONE = [200, 161, 101];      // Farbe für Punktwolken ohne eigene Farben
   const FRESH = [228, 231, 225];      // Farbe der gerade "gescannten" Punkte
+  const LANG = (() => {
+    const q = new URLSearchParams(location.search).get('lang');
+    if (q === 'de' || q === 'en') return q;
+    const n = (navigator.language || '').toLowerCase();
+    return n.startsWith('de') ? 'de' : 'en';
+  })();
+  const I18N = {
+    de: {
+      sections: 'Abschnitte',
+      language: 'Sprache',
+      scrollToDevices: 'Zu den Geraeten',
+      projectOf: (i, total) => `Projekt ${i} von ${total}`,
+      textLoadError: (msg) => `Text konnte nicht geladen werden: ${msg}`,
+      mediaLoading: '3D-Datei wird geladen ...',
+      mediaLoadError: (msg) => `3D-Datei konnte nicht geladen werden: ${msg}`,
+      mediaHintImage: 'Statisches Bild',
+      fallbackLocal: 'Lokal zuerst "python tools/build_manifest.py" ausfuehren und die Seite ueber einen Webserver oeffnen.',
+    },
+    en: {
+      sections: 'Sections',
+      language: 'Language',
+      scrollToDevices: 'Go to devices',
+      projectOf: (i, total) => `Project ${i} of ${total}`,
+      textLoadError: (msg) => `Could not load text: ${msg}`,
+      mediaLoading: 'Loading 3D file ...',
+      mediaLoadError: (msg) => `Could not load 3D file: ${msg}`,
+      mediaHintImage: 'Static image',
+      fallbackLocal: 'Run "python tools/build_manifest.py" first, then open the page via a local web server.',
+    },
+  };
+  const T = I18N[LANG];
 
   /* =========================================================
      1. Ordnerliste: manifest.json, sonst GitHub-API
@@ -448,11 +517,28 @@
 
   function pickFiles(dir, names) {
     names = names.slice().sort((a, b) => a.localeCompare(b));
-    const txt = names.find((n) => n.toLowerCase().endsWith('.txt'));
+    const txtDe = names.find((n) => n.toLowerCase().endsWith('.de.txt'));
+    const txtEn = names.find((n) => n.toLowerCase().endsWith('.en.txt'));
+    const txt = names.find((n) => n.toLowerCase().endsWith('.txt') && !n.toLowerCase().endsWith('.de.txt') && !n.toLowerCase().endsWith('.en.txt')) || txtDe || txtEn;
     const ply = names.find((n) => n.toLowerCase().endsWith('.ply'));
+    const glb = names.find((n) => n.toLowerCase().endsWith('.glb'));
+    const image = names.find((n) => /\.(png|jpe?g|webp|avif|gif)$/i.test(n));
+    const mediaType = ply ? 'ply' : (glb ? 'glb' : (image ? 'image' : null));
+    const media = mediaType === 'ply' ? ply : (mediaType === 'glb' ? glb : image);
     const cfg = names.includes('config.json') ? 'config.json' : null;
     const j = (f) => (f ? `${dir}/${f}` : null);
-    return { path: dir, text: j(txt), ply: j(ply), config: j(cfg) };
+    return {
+      path: dir,
+      text: j(txt),
+      text_de: j(txtDe),
+      text_en: j(txtEn),
+      media: j(media),
+      mediaType,
+      ply: j(ply),
+      glb: j(glb),
+      image: j(image),
+      config: j(cfg),
+    };
   }
 
   async function manifestFromGitHub() {
@@ -488,7 +574,7 @@
     try { return await manifestFromGitHub(); }
     catch (e) {
       console.warn('Ordner cover/ und projects/ konnten nicht gelesen werden. ' +
-        'Lokal zuerst "python3 tools/build_manifest.py" ausführen und die Seite über einen Webserver öffnen.', e);
+        T.fallbackLocal, e);
       return null;
     }
   }
@@ -514,6 +600,27 @@
     const paras = rest.trim().split(/\n\s*\n/)
       .map((p) => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
     return { title: title.replace(/\s+/g, ' ').trim(), paras };
+  }
+
+  function selectLanguageBlock(raw, lang) {
+    const marker = /^\[(de|en)\]\s*$/gim;
+    const matches = [...raw.matchAll(marker)];
+    if (!matches.length) return raw;
+    const blocks = {};
+    for (let i = 0; i < matches.length; i++) {
+      const key = matches[i][1].toLowerCase();
+      const start = matches[i].index + matches[i][0].length;
+      const end = i + 1 < matches.length ? matches[i + 1].index : raw.length;
+      blocks[key] = raw.slice(start, end).trim();
+    }
+    return blocks[lang] || blocks.de || blocks.en || raw;
+  }
+
+  function textPathForLanguage(entry, lang) {
+    if (!entry) return null;
+    if (lang === 'de' && entry.text_de) return entry.text_de;
+    if (lang === 'en' && entry.text_en) return entry.text_en;
+    return entry.text || entry.text_de || entry.text_en || null;
   }
 
   /* =========================================================
@@ -673,6 +780,22 @@
      4. Renderer: Punktwolke mit Tiefenpuffer auf Canvas
      ========================================================= */
   const views = new Set();
+  let modelViewerReady = null;
+
+  async function ensureModelViewer() {
+    if (customElements.get('model-viewer')) return;
+    if (!modelViewerReady) {
+      modelViewerReady = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.type = 'module';
+        s.src = 'https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('model-viewer konnte nicht geladen werden'));
+        document.head.appendChild(s);
+      });
+    }
+    await modelViewerReady;
+  }
 
   class CloudView {
     constructor(section, cloud, cfg) {
@@ -792,9 +915,11 @@
     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'projekt';
 
   async function fillText(sec, entry) {
-    if (!entry || !entry.text) return;
+    const path = textPathForLanguage(entry, LANG);
+    if (!path) return;
     try {
-      const { title, paras } = splitText(await fetchText(entry.text));
+      const raw = selectLanguageBlock(await fetchText(path), LANG);
+      const { title, paras } = splitText(raw);
       if (title) {
         sec.querySelector('.cloud-title').textContent = title;
         sec.dataset.label = title;
@@ -804,30 +929,100 @@
       }));
     } catch (e) {
       console.error(e);
-      setStatus(sec, `Text konnte nicht geladen werden: ${e.message}`);
+      setStatus(sec, T.textLoadError(e.message));
     }
+  }
+
+  function clearMedia(sec) {
+    sec.querySelectorAll('.cloud-media').forEach((el) => el.remove());
+    const canvas = sec.querySelector('canvas.cloud');
+    if (canvas) canvas.hidden = false;
+  }
+
+  function mediaCandidates(entry) {
+    if (!entry) return [];
+    const order = [];
+    const add = (type, path) => {
+      if (!path || order.some((x) => x.path === path)) return;
+      order.push({ type, path });
+    };
+    add(entry.mediaType, entry.media);
+    add('ply', entry.ply);
+    add('glb', entry.glb);
+    add('image', entry.image);
+    return order;
+  }
+
+  async function loadImage(sec, path) {
+    const img = document.createElement('img');
+    img.className = 'cloud-media';
+    img.alt = '';
+    img.src = toUrl(path);
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('Bilddatei ist nicht lesbar'));
+    });
+    const shade = sec.querySelector('.shade');
+    sec.insertBefore(img, shade);
+  }
+
+  async function loadGlb(sec, path) {
+    await ensureModelViewer();
+    const model = document.createElement('model-viewer');
+    model.className = 'cloud-media';
+    model.setAttribute('src', toUrl(path));
+    model.setAttribute('camera-controls', '');
+    model.setAttribute('interaction-prompt', 'none');
+    model.setAttribute('disable-pan', '');
+    if (!reduce) model.setAttribute('auto-rotate', '');
+    model.setAttribute('rotation-per-second', '18deg');
+    model.setAttribute('camera-orbit', '35deg 72deg auto');
+    model.setAttribute('exposure', '1');
+    model.setAttribute('shadow-intensity', '0');
+    const shade = sec.querySelector('.shade');
+    sec.insertBefore(model, shade);
   }
 
   async function loadCloud(sec, entry, isCover) {
     let cfg = {};
+    clearMedia(sec);
     if (entry && entry.config) {
       try { cfg = await (await fetchOk(entry.config)).json(); }
       catch (e) { console.warn(`config.json in ${entry.path} ist ungültig und wird ignoriert.`, e); }
     }
-    if (entry && entry.ply) {
-      setStatus(sec, 'Punktwolke wird geladen …');
+    const canvas = sec.querySelector('canvas.cloud');
+    for (const m of mediaCandidates(entry)) {
+      setStatus(sec, T.mediaLoading);
       try {
-        const buf = await (await fetchOk(entry.ply)).arrayBuffer();
-        const raw = parsePLY(buf, cfg.maxPoints || MAX_POINTS);
-        new CloudView(sec, normalizeCloud(raw, cfg.up), cfg);
-        setStatus(sec, null);
-        return;
+        if (m.type === 'ply') {
+          if (canvas) canvas.hidden = false;
+          const buf = await (await fetchOk(m.path)).arrayBuffer();
+          const raw = parsePLY(buf, cfg.maxPoints || MAX_POINTS);
+          new CloudView(sec, normalizeCloud(raw, cfg.up), cfg);
+          setStatus(sec, null);
+          return;
+        }
+        if (canvas) canvas.hidden = true;
+        if (m.type === 'glb') {
+          await loadGlb(sec, m.path);
+          setStatus(sec, null);
+          return;
+        }
+        if (m.type === 'image') {
+          await loadImage(sec, m.path);
+          setStatus(sec, T.mediaHintImage);
+          return;
+        }
       } catch (e) {
         console.error(e);
-        setStatus(sec, `Punktwolke konnte nicht geladen werden: ${e.message}`);
+        setStatus(sec, T.mediaLoadError(e.message));
       }
     }
-    if (isCover) new CloudView(sec, normalizeCloud(archCloud(), 'y'), { yaw: -26 });
+    if (canvas) canvas.hidden = false;
+    if (isCover) {
+      new CloudView(sec, normalizeCloud(archCloud(), 'y'), { yaw: -26 });
+      setStatus(sec, null);
+    }
   }
 
   function makeProjectSection(entry, i, total) {
@@ -841,7 +1036,7 @@
       '<canvas class="cloud" aria-hidden="true"></canvas>' +
       '<div class="shade" aria-hidden="true"></div>' +
       '<div class="inner"><div class="cloud-text">' +
-      `<span class="scale">Projekt ${i + 1} von ${total}</span>` +
+      `<span class="scale">${T.projectOf(i + 1, total)}</span>` +
       '<h2 class="cloud-title"></h2><div class="cloud-body"></div>' +
       '</div></div>' +
       '<p class="cloud-status" role="status" hidden></p>';
@@ -873,6 +1068,23 @@
   }
 
   async function init() {
+    document.documentElement.lang = LANG;
+    document.querySelector('nav')?.setAttribute('aria-label', T.sections);
+    const switcher = document.querySelector('.lang-switch');
+    if (switcher) {
+      switcher.setAttribute('aria-label', T.language);
+      switcher.querySelectorAll('[data-lang-link]').forEach((a) => {
+        const code = a.getAttribute('data-lang-link');
+        a.setAttribute('href', `?lang=${code}${location.hash || ''}`);
+        a.setAttribute('aria-current', code === LANG ? 'true' : 'false');
+      });
+    }
+    const scrollHint = document.querySelector('.scroll-hint');
+    if (scrollHint) {
+      const txt = scrollHint.childNodes[scrollHint.childNodes.length - 1];
+      if (txt && txt.nodeType === Node.TEXT_NODE) txt.textContent = ` ${T.scrollToDevices}`;
+    }
+
     const manifest = await loadManifest();
     const cover = document.getElementById('hero');
     const coverEntry = manifest && manifest.cover;
